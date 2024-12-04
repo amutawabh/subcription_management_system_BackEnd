@@ -1,6 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-require("dotenv").config(); // تحميل قيم .env
+require("dotenv").config(); //.env
 const { registerUser, loginUser } = require("./controllers/userController");
 const { createSubscription, getSubscriptions } = require("./controllers/subscriptionController");
 const authMiddleware = require("./middleware/authMiddleware");
