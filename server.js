@@ -1,40 +1,34 @@
 // server.js
 
-const express = require("express");
-const mongoose = require("mongoose");
-require("dotenv").config(); //.env
+// Load environment variables
+require('dotenv').config();
+require('./config/database');
 
-const { registerUser, loginUser } = require("./controllers/userController");
-const { createSubscription, getSubscriptions } = require("./controllers/subscriptionController");
-const authMiddleware = require("./middleware/authMiddleware");
+const express = require('express');
+const morgan = require('morgan');
+const cors = require('cors');
+const verifyToken = require('./middleware/verifyToken');
+
+// Routers
+const usersRouter = require('./controllers/userController');
+const subscriptionsRouter = require('./controllers/subscriptionController');
 
 const app = express();
+
+// Middlewares
 app.use(express.json());
+app.use(morgan('dev'));
+app.use(cors());
 
-// User Routes
-app.post("/api/users/register", registerUser);
-app.post("/api/users/login", async (req, res) => {
-  try {
-    await loginUser(req, res); 
-  } catch (error) {
-    console.error("Error in login route:", error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
+// Public Routes
+app.use('/users', usersRouter); // User routes
 
-// Subscription Routes
-app.post("/api/subscriptions/create", authMiddleware, createSubscription);
-app.get("/api/subscriptions", authMiddleware, getSubscriptions);
+// Private Routes (Protected with verifyToken)
+app.use(verifyToken);
+app.use('/subscriptions', subscriptionsRouter); // Subscription routes
 
-// MongoDB Connection
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log("MongoDB connected successfully"))
-  .catch((err) => {
-    console.error("MongoDB connection failed:", err);
-    process.exit(1); // Stop the server if DB connection fails
-  });
-
-// Start Server
+// Start the server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`The express app is running on port ${PORT}`);
+});
