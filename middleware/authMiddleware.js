@@ -1,15 +1,27 @@
+//middleware/authMiddleware.js
+
 const jwt = require("jsonwebtoken");
 
 const authMiddleware = (req, res, next) => {
-  const token = req.header("Authorization")?.split(" ")[1]; // تعديل التعامل مع صيغة Bearer
-  if (!token) return res.status(401).json({ message: "Access Denied" });
-
   try {
-    const verified = jwt.verify(token, process.env.JWT_SECRET); // استخدام المفتاح السري من ملف .env
-    req.user = verified;
-    next();
+    const authHeader = req.header("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Access Denied" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const verified = jwt.verify(token, process.env.JWT_SECRET); // تحقق من صحة التوكن باستخدام المفتاح السري
+    
+    // التحقق من أن التوكن يحتوي على البيانات الضرورية
+    if (!verified || !verified.role) {
+      return res.status(403).json({ message: "Invalid Token Data: Role is missing" });
+    }
+    
+    req.user = verified; // إضافة بيانات المستخدم إلى الطلب
+    next(); // الانتقال إلى الوظيفة التالية
   } catch (error) {
-    res.status(400).json({ message: "Invalid Token" });
+    console.error("Authentication Error:", error); // تسجيل الخطأ للمراجعة
+    res.status(401).json({ message: "Invalid Token" });
   }
 };
 
